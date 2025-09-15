@@ -1,0 +1,741 @@
+/* UPDATED: Enhanced map-styles.css with professional styling and FIXED Messstelle label positioning */
+
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial, sans-serif;
+}
+
+.header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    padding: 15px 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-bottom: 3px solid #3498db;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 500;
+    color: #ecf0f1;
+    letter-spacing: 0.5px;
+}
+
+.header-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.upload-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.file-input-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+.file-input-wrapper input[type=file] {
+    position: absolute;
+    left: -9999px;
+}
+
+.file-input-label {
+    background: rgba(52, 73, 94, 0.8);
+    color: #ecf0f1;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid rgba(236, 240, 241, 0.3);
+}
+
+.file-input-label:hover {
+    background: rgba(44, 62, 80, 0.9);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(44, 62, 80, 0.3);
+}
+
+.dashboard-link {
+    background: rgba(52, 73, 94, 0.8);
+    color: #ecf0f1;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid rgba(236, 240, 241, 0.3);
+}
+
+.dashboard-link:hover {
+    background: rgba(44, 62, 80, 0.9);
+
+    box-shadow: 0 2px 8px rgba(44, 62, 80, 0.3);
+    text-decoration: none;
+    color: #ecf0f1;
+}
+
+#upload-status {
+    margin-left: 15px;
+    font-size: 12px;
+    min-width: 200px;
+}
+
+#map {
+    height: calc(100vh - 100px);
+    width: 100%;
+}
+
+.controls {
+    position: absolute;
+    top: 120px;
+    right: 10px;
+    z-index: 1000;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    max-width: 250px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.controls h3 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 16px;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 5px;
+}
+
+.control-group {
+    margin-bottom: 15px;
+}
+
+.control-group label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: block;
+    font-size: 12px;
+    color: #495057;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+    font-size: 11px;
+}
+
+.color-box {
+    width: 12px;
+    height: 12px;
+    margin-right: 6px;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+}
+
+button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    margin: 2px;
+    transition: background-color 0.2s ease;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+.info-panel {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(255,255,255,0.95);
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    z-index: 1000;
+    max-width: 300px;
+}
+
+.no-data-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+.upload-success {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.upload-error {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.loading {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 8px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* UPDATED: Enhanced filters styling with proper z-index management */
+.filters-container {
+    position: absolute;
+    top: 120px;
+    left: 10px;
+    z-index: 2000;
+    max-width: 450px; /* INCREASED to accommodate wider dropdowns */
+    min-width: 150px; /* ENSURE minimum width */
+    background: rgba(255,255,255,0.98);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border: 1px solid #e9ecef;
+    overflow: visible;
+}
+
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+}
+
+.filter-title {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 18px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.clear-all-btn-small {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clear-all-btn-small:hover {
+    background: #c82333;
+
+}
+
+.filter-group {
+    position: relative;
+    margin-bottom: 15px;
+    z-index: 100; /* Ensure filter groups have proper stacking */
+}
+
+.filter-group.active {
+    z-index: 10000 !important; /* Much higher z-index when active */
+}
+
+
+.filter-label {
+    font-weight: bold;
+    margin-bottom: 8px;
+    display: block;
+    font-size: 14px;
+    color: #495057;
+    cursor: pointer;
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    user-select: none;
+    position: relative;
+    z-index: 10;
+}
+
+.filter-label:hover {
+    background: #e9ecef;
+    border-color: #007bff;
+
+}
+
+.filter-label.active {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    border-color: #0056b3;
+    box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+
+    z-index: 99998 !important; /* High z-index for active label */
+}
+
+/* UPDATED: Filter dropdown with proper z-index stacking */
+.filter-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: -100px; /* EXTEND beyond the container for more width */
+    width: 400px; /* FIXED width for consistency */
+    min-width: 400px; /* ENSURE minimum width */
+    background: white;
+    border: 2px solid #007bff;
+    border-radius: 0 0 8px 8px;
+    max-height: 450px; /* INCREASED from 350px */
+    overflow-y: auto;
+    z-index: 99999 !important;
+    display: none;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    -webkit-overflow-scrolling: touch;
+}
+
+.filter-dropdown.show {
+    display: block;
+     z-index: 99999 !important;
+}
+
+/* Search container styling */
+.filter-search-container {
+    padding: 15px 20px; /* INCREASED padding */
+    border-bottom: 2px solid #f1f1f1;
+    background: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.filter-search-input {
+    width: 100%;
+    padding: 10px 15px; /* INCREASED padding */
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 14px; /* INCREASED font size */
+    margin-bottom: 10px; /* INCREASED margin */
+    transition: border-color 0.2s ease;
+}
+
+.filter-search-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.filter-action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.filter-btn {
+    flex: 1;
+    padding: 6px 12px;
+    font-size: 10px;
+    font-weight: 600;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-btn:not(.secondary) {
+    background: #28a745;
+    color: white;
+}
+
+.filter-btn:not(.secondary):hover {
+    background: #218838;
+
+}
+
+.filter-btn.secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.filter-btn.secondary:hover {
+    background: #5a6268;
+
+}
+
+.filter-option {
+    padding: 12px 20px; /* INCREASED padding */
+    cursor: pointer;
+    border-bottom: 1px solid #f1f1f1;
+    font-size: 14px; /* INCREASED font size */
+    transition: background-color 0.15s ease;
+    display: flex;
+    align-items: center;
+    background: white;
+    word-wrap: break-word;
+    white-space: normal; /* ALLOW text wrapping */
+}
+
+.filter-option:hover {
+    background: #f8f9fa;
+    color: #007bff;
+}
+
+.filter-option.selected {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    color: white !important;
+    font-weight: 600;
+    border-left: 4px solid #004085;
+    order: -1; /* Move selected items to top */
+}
+
+/* Container to separate selected and available options */
+.filter-options-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-selected-section {
+    order: 1;
+}
+
+.filter-available-section {
+    order: 2;
+    border-top: 2px solid #e9ecef;
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+.filter-section-header {
+    padding: 10px 20px; /* INCREASED padding */
+    background: #f8f9fa;
+    font-weight: bold;
+    font-size: 12px; /* INCREASED font size */
+    color: #495057;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #dee2e6;
+
+}
+
+
+
+
+
+
+
+.filter-option:last-child {
+    border-bottom: none;
+    border-radius: 0 0 6px 6px;
+}
+
+.filter-option.hidden {
+    display: none;
+}
+
+/* Filter summary styling */
+.filter-summary {
+    margin-top: 15px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+/* Enhanced scrollbar for filter dropdowns */
+.filter-dropdown::-webkit-scrollbar {
+    width: 8px;
+}
+
+.filter-dropdown::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 6px;
+}
+
+.filter-dropdown::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #007bff 0%, #0056b3 100%);
+    border-radius: 6px;
+}
+
+.filter-dropdown::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #0056b3 0%, #004085 100%);
+}
+
+/* FIXED: Professional Messstelle labels - positioned directly above markers with proper opacity */
+.permanent-messstelle-label {
+    background: rgba(44, 62, 80, 0.85) !important; /* Professional dark background with opacity */
+    border: 1px solid rgba(44, 62, 80, 0.9) !important;
+    border-radius: 6px !important;
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #ecf0f1 !important; /* Light text for contrast */
+    box-shadow: 0 3px 8px rgba(0,0,0,0.25) !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+    z-index: 1000 !important;
+    display: block !important;
+    opacity: 0.9 !important; /* Slight opacity for less cluttered appearance */
+    backdrop-filter: blur(2px) !important;
+    max-width: 150px !important; /* Prevent overflow */
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif !important;
+    letter-spacing: 0.2px !important;
+    line-height: 1.2 !important;
+}
+
+/* FIXED: Position label directly above marker - no gap */
+.permanent-messstelle-label.leaflet-tooltip-top {
+    margin-top: -2px !important; /* Positioned directly above the marker (marker height ~45px + small gap) */
+    margin-left: -0 !important; /* Center the label above the marker */
+    pointer-events: none !important; /* Prevent clicks from interfering */
+    user-select: none !important;
+}
+
+/* UPDATED: Hover tooltip styling - differentiate from permanent labels */
+.hover-tooltip {
+    background: rgba(0,0,0,0.85) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    z-index: 1001 !important;
+    max-width: 200px !important;
+    word-wrap: break-word !important;
+}
+
+/* Enhanced popup styling */
+.leaflet-popup-content-wrapper {
+    border-radius: 8px !important;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2) !important;
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    z-index: 1002 !important;
+}
+
+.permanent-messstelle-label-custom {
+    z-index: 900 !important; /* Labels below popups */
+    background: rgba(255, 255, 255, 0.5) !important;
+    color: #000000 !important;
+    border: 1px solid rgba(0, 0, 0, 0.3) !important;
+    max-width: 120px !important;
+    word-wrap: break-word !important;
+    white-space: normal !important;
+    will-change: transform !important; /* Optimize for transform changes */
+    backface-visibility: hidden !important; /* Reduce repaints */
+}
+
+
+
+
+.hover-tooltip-improved {
+    background: rgba(255, 255, 255, 0.6) !important;
+    color: #000000 !important;
+    border: 1px solid rgba(0, 0, 0, 0.2) !important;
+    border-radius: 6px !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2) !important;
+    z-index: 1001 !important;
+    max-width: 150px !important;
+    min-width: 60px !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    text-align: center !important;
+    line-height: 1.3 !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
+    backdrop-filter: blur(3px) !important;
+}
+
+
+
+.leaflet-popup {
+    z-index: 1001 !important; /* Ensure popups are on top */
+}
+
+.leaflet-popup-pane {
+    z-index: 1000 !important; /* Popups above labels */
+}
+
+.leaflet-popup-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    width: 420px !important;
+    max-width: 420px !important;
+    background: transparent !important;
+}
+
+.leaflet-popup-tip {
+    background: #2c3e50 !important;
+    border: none !important;
+}
+
+.leaflet-popup-content table {
+    table-layout: auto !important;
+    border-spacing: 0 !important;
+    border-collapse: collapse !important;
+}
+
+.leaflet-popup-content table td,
+.leaflet-popup-content table th {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
+}
+
+.leaflet-popup-content table tbody tr:hover {
+    background: #e3f2fd !important;
+}
+
+
+
+
+/* Ensure dropdowns appear above all other elements */
+.filter-dropdown {
+    position: absolute !important;
+    z-index: 9999 !important;
+}
+
+
+
+@media (max-width: 480px) {
+    .filters-container {
+        max-width: 95%;
+        left: 2.5%;
+        padding: 12px;
+    }
+
+    .filter-title {
+        font-size: 16px;
+    }
+
+    .filter-group {
+        margin-bottom: 12px;
+    }
+
+    .filter-label {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .clear-all-btn-small {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+
+    /* Even smaller labels on very small screens */
+
+    /* Compact search bar on mobile */
+    .messstelle-search-container {
+        top: 5px !important;
+    }
+
+    /* Minimal transitions on small screens */
+    * {
+        transition: none !important;
+    }
+}
+
+/* Performance optimizations */
+.custom-marker-icon {
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+}
+
+/* GPU acceleration for smooth scrolling */
+.filter-dropdown {
+    will-change: scroll-position;
+
+}
+
+/* Optimize map container */
+#map {
+    will-change: transform;
+
+}
+
+/* UPDATED: Professional animations */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.
+
+/* UPDATED: Search marker professional styling */
+@keyframes searchPulseSmooth {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.9;
+        box-shadow: 0 6px 20px rgba(231,76,60,0.4);
+    }
+    50% {
+        transform: scale(1.15);
+        opacity: 1;
+        box-shadow: 0 8px 25px rgba(231,76,60,0.6);
+    }
+}
+
+/* Utility classes */
+.text-center {
+    text-align: center;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.permanent-messstelle-label {
+    animation: fadeInScale 0.3s ease-out !important;
+}
+
+

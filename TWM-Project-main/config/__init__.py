@@ -1,0 +1,5 @@
+# config/__init__.py
+
+from .constants import KW_RANGES, COLORS, QUARTERS, HALFYEARS, PARAMETER_GROUPS
+
+__all__ = ['KW_RANGES', 'COLORS', 'QUARTERS', 'HALFYEARS', 'PARAMETER_GROUPS']

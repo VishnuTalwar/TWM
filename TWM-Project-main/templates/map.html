@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Probenplanung Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="/static/css/map-styles.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <!-- UPDATED: More professional header with neutral colors -->
+    <div class="header" style="
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        padding: 15px 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        border-bottom: 3px solid #3498db;
+    ">
+        <h1 style="
+            margin: 0;
+            font-size: 24px;
+            font-weight: 500;
+            color: #ecf0f1;
+            letter-spacing: 0.5px;
+        ">🗺️ Probenplanung Map</h1>
+        <div class="header-controls">
+            <div class="upload-section">
+                <div class="file-input-wrapper">
+                    <input type="file" id="excel-file" accept=".xlsx,.xls" />
+                    <label for="excel-file" class="file-input-label" style="
+                        background: rgba(52, 73, 94, 0.8);
+                        color: #ecf0f1;
+                        padding: 8px 16px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        font-size: 12px;
+                        font-weight: 500;
+                        border: 1px solid rgba(236, 240, 241, 0.3);
+                    ">📁 Upload Excel File</label>
+                </div>
+                <div id="upload-status">{% if has_data %}✅ {{ data_count }} points loaded{% else %}Please upload Excel file{% endif %}</div>
+            </div>
+            <a href="{{ dashboard_url }}" target="_blank" class="dashboard-link" style="
+                background: rgba(52, 73, 94, 0.8);
+                color: #ecf0f1;
+                padding: 8px 16px;
+                border-radius: 6px;
+                text-decoration: none;
+                transition: all 0.2s ease;
+                font-size: 12px;
+                font-weight: 500;
+                border: 1px solid rgba(236, 240, 241, 0.3);
+            ">📊 Open Dashboard</a>
+        </div>
+    </div>
+
+    <!-- UPDATED: Cleaner, more professional search bar -->
+    <div class="messstelle-search-container" style="
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1001;
+        width: 450px;
+        max-width: 90vw;
+    ">
+        <div style="
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            border: 1px solid rgba(52, 73, 94, 0.15);
+            backdrop-filter: blur(10px);
+        ">
+            <input
+                type="text"
+                id="messstelle-search-input"
+                placeholder="Search Messstelle (press Enter to navigate)..."
+                style="
+                    flex: 1;
+                    padding: 14px 18px;
+                    border: none;
+                    outline: none;
+                    font-size: 14px;
+                    border-radius: 12px 0 0 12px;
+                    background: transparent;
+                    color: #2c3e50;
+                    font-weight: 400;
+                "
+            />
+            <button
+                id="messstelle-search-btn"
+                style="
+                    padding: 14px 18px;
+                    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+                    color: white;
+                    border: none;
+                    cursor: pointer;
+                    font-size: 13px;
+                    font-weight: 600;
+                    transition: all 0.2s ease;
+                    letter-spacing: 0.3px;
+                "
+                title="Search Messstelle"
+            >
+                🔍 Search
+            </button>
+            <button
+                id="clear-search-btn"
+                style="
+                    padding: 14px 16px;
+                    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+                    color: white;
+                    border: none;
+                    border-radius: 0 12px 12px 0;
+                    cursor: pointer;
+                    font-size: 12px;
+                    font-weight: 600;
+                    transition: all 0.2s ease;
+                "
+                title="Clear Search"
+            >
+                ✕
+            </button>
+        </div>
+
+        <!-- Updated search results dropdown -->
+        <div id="search-results-dropdown" style="
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid rgba(52, 73, 94, 0.15);
+            border-radius: 0 0 12px 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+            backdrop-filter: blur(10px);
+            z-index: 1002;
+            display: none;
+        ">
+            <!-- Results will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+    // UPDATED: Enhanced Messstelle Search with better positioning and opacity
+    class MessstelleSearch {
+        constructor() {
+            this.searchInput = document.getElementById('messstelle-search-input');
+            this.searchBtn = document.getElementById('messstelle-search-btn');
+            this.clearBtn = document.getElementById('clear-search-btn');
+            this.resultsDropdown = document.getElementById('search-results-dropdown');
+            this.currentSearchMarker = null;
+            this.searchResults = [];
+
+            this.initializeSearch();
+        }
+
+        initializeSearch() {
+            if (!this.searchInput || !this.searchBtn) {
+                console.log('Search elements not found');
+                return;
+            }
+
+            // Enter key search
+            this.searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    this.performSearch();
+                }
+            });
+
+            // Button click search
+            this.searchBtn.addEventListener('click', () => {
+                this.performSearch();
+            });
+
+            // Clear search
+            this.clearBtn.addEventListener('click', () => {
+                this.clearSearch();
+            });
+
+            // Real-time search suggestions
+            this.searchInput.addEventListener('input', (e) => {
+                this.showSearchSuggestions(e.target.value);
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.messstelle-search-container')) {
+                    this.hideSearchSuggestions();
+                }
+            });
+
+            console.log('Messstelle search initialized');
+        }
+
+        performSearch() {
+            const searchTerm = this.searchInput.value.trim();
+            if (!searchTerm) return;
+
+            console.log('Searching for Messstelle:', searchTerm);
+
+            const results = this.findMessstelle(searchTerm);
+
+            if (results.length === 0) {
+                this.showNoResultsMessage();
+                return;
+            }
+
+            if (results.length === 1) {
+                // Single result - navigate directly
+                this.navigateToMessstelle(results[0]);
+            } else {
+                // Multiple results - show options
+                this.showSearchResults(results);
+            }
+        }
+
+        findMessstelle(searchTerm) {
+            if (!window.mapConfig || !window.mapConfig.markersData) {
+                console.log('No map data available for search');
+                return [];
+            }
+
+            const term = searchTerm.toLowerCase();
+            const results = [];
+
+            window.mapConfig.markersData.forEach((marker, index) => {
+                const messstelle = this.getMessstelleValue(marker);
+                const kunde = marker.kunde || 'Unknown';
+                const zapfstelle = marker.zapfstelle || '';
+
+                // Search in Messstelle name, customer, and zapfstelle
+                const searchableText = `${messstelle} ${kunde} ${zapfstelle}`.toLowerCase();
+
+                if (searchableText.includes(term)) {
+                    results.push({
+                        marker: marker,
+                        messstelle: messstelle,
+                        kunde: kunde,
+                        zapfstelle: zapfstelle,
+                        index: index,
+                        relevance: this.calculateRelevance(term, messstelle, kunde, zapfstelle)
+                    });
+                }
+            });
+
+            // Sort by relevance (exact match first, then partial matches)
+            results.sort((a, b) => b.relevance - a.relevance);
+
+            return results;
+        }
+
+        calculateRelevance(searchTerm, messstelle, kunde, zapfstelle) {
+            const term = searchTerm.toLowerCase();
+            let score = 0;
+
+            // Exact match gets highest score
+            if (messstelle.toLowerCase() === term) score += 100;
+            else if (messstelle.toLowerCase().includes(term)) score += 50;
+
+            // Customer match
+            if (kunde.toLowerCase().includes(term)) score += 20;
+
+            // Zapfstelle match
+            if (zapfstelle.toLowerCase().includes(term)) score += 10;
+
+            // Boost score if term appears at start
+            if (messstelle.toLowerCase().startsWith(term)) score += 25;
+
+            return score;
+        }
+
+        getMessstelleValue(marker) {
+            // Extract Messstelle value similar to the existing function
+            if (marker.messstelle) return marker.messstelle;
+            if (marker.Messstelle) return marker.Messstelle;
+
+            // Fallback to extracting from label
+            if (marker.label) {
+                const parts = marker.label.split(' - ');
+                if (parts.length >= 3) {
+                    return parts[parts.length - 1].trim();
+                }
+            }
+
+            return marker.label || 'Unknown';
+        }
+
+        navigateToMessstelle(result) {
+            if (!window.map) {
+                console.log('Map not available for navigation');
+                return;
+            }
+
+            const coords = result.marker.coordinates;
+            console.log('Attempting to navigate to:', result.messstelle, 'at coordinates:', coords);
+
+            // Validate coordinates
+            if (!coords || coords.length !== 2 || isNaN(coords[0]) || isNaN(coords[1])) {
+                console.error('Invalid coordinates for navigation:', coords);
+                return;
+            }
+
+            // Step 1: Center and zoom the map first
+            console.log('Centering map at:', coords);
+            window.map.setView([coords[0], coords[1]], 16, { animate: true, duration: 1 });
+
+            // Step 2: Find the actual marker object with better matching
+            let markerObj = null;
+
+            if (window.allMarkers && window.allMarkers.length > 0) {
+                console.log('Searching through', window.allMarkers.length, 'markers');
+
+                markerObj = window.allMarkers.find(m => {
+                    if (!m.data) return false;
+
+                    // Try multiple coordinate comparisons
+                    const latMatch = Math.abs(m.data.lat - coords[0]) < 0.0001;
+                    const lonMatch = Math.abs(m.data.lon - coords[1]) < 0.0001;
+
+                    // Also try comparing with coordinates array if available
+                    let coordsMatch = false;
+                    if (m.data.coordinates && Array.isArray(m.data.coordinates)) {
+                        const latMatch2 = Math.abs(m.data.coordinates[0] - coords[0]) < 0.0001;
+                        const lonMatch2 = Math.abs(m.data.coordinates[1] - coords[1]) < 0.0001;
+                        coordsMatch = latMatch2 && lonMatch2;
+                    }
+
+                    return (latMatch && lonMatch) || coordsMatch;
+                });
+
+                if (markerObj) {
+                    console.log('Found matching marker object');
+                } else {
+                    console.log('No matching marker found, trying alternative search');
+
+                    // Alternative: search by messstelle name
+                    markerObj = window.allMarkers.find(m => {
+                        if (!m.data) return false;
+                        const markerMessstelle = this.getMessstelleValue(m.data);
+                        return markerMessstelle === result.messstelle;
+                    });
+                }
+            }
+
+            // Step 3: Add visual search indicator
+            this.clearSearchMarker();
+            this.addSearchMarker([coords[0], coords[1]]);
+
+            // Step 4: Open popup if marker found
+            if (markerObj && markerObj.marker) {
+                console.log('Opening popup for found marker');
+                setTimeout(() => {
+                    try {
+                        // Make sure marker is visible on map first
+                        if (!window.map.hasLayer(markerObj.marker)) {
+                            console.log('Marker not visible, adding to map');
+                            window.map.addLayer(markerObj.marker);
+                        }
+
+                        // Open the popup
+                        markerObj.marker.openPopup();
+                        console.log('Popup opened successfully');
+                    } catch (error) {
+                        console.error('Error opening popup:', error);
+                    }
+                }, 1000); // Increased delay to ensure map animation completes
+            } else {
+                console.log('Marker object not found, navigation completed with visual indicator only');
+            }
+
+            // Step 5: Update UI
+            this.searchInput.value = result.messstelle;
+            this.hideSearchSuggestions();
+
+            console.log('Navigation process completed for:', result.messstelle);
+        }
+
+        // UPDATED: Enhanced search marker with professional styling
+        addSearchMarker(coords) {
+            if (!window.map) return;
+
+            console.log('Adding search marker at:', coords);
+
+            // Remove any existing search marker
+            this.clearSearchMarker();
+
+            // Create a more professional search marker
+            this.currentSearchMarker = L.marker(coords, {
+                icon: L.divIcon({
+                    html: `
+                        <div style="
+                            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+                            color: white;
+                            border-radius: 50%;
+                            width: 50px;
+                            height: 50px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 24px;
+                            border: 4px solid rgba(255,255,255,0.9);
+                            box-shadow: 0 6px 20px rgba(231,76,60,0.4);
+                            animation: searchPulseSmooth 2s ease-in-out infinite;
+                            z-index: 1000;
+                        " class="search-marker-icon">🎯</div>
+                        <style>
+                            @keyframes searchPulseSmooth {
+                                0%, 100% { transform: scale(1); opacity: 0.9; box-shadow: 0 6px 20px rgba(231,76,60,0.4); }
+                                50% { transform: scale(1.15); opacity: 1; box-shadow: 0 8px 25px rgba(231,76,60,0.6); }
+                            }
+                            .search-marker-icon {
+                                z-index: 1000 !important;
+                            }
+                        </style>
+                    `,
+                    iconSize: [50, 50],
+                    iconAnchor: [25, 25],
+                    className: 'search-marker-custom'
+                }),
+                zIndexOffset: 1000
+            });
+
+            // Add to map
+            this.currentSearchMarker.addTo(window.map);
+            console.log('Search marker added to map');
+
+            // Auto-remove after 8 seconds
+            setTimeout(() => {
+                this.clearSearchMarker();
+            }, 8000);
+        }
+
+        clearSearchMarker() {
+            if (this.currentSearchMarker && window.map) {
+                window.map.removeLayer(this.currentSearchMarker);
+                this.currentSearchMarker = null;
+            }
+        }
+
+        showSearchSuggestions(searchTerm) {
+            if (!searchTerm.trim() || searchTerm.length < 2) {
+                this.hideSearchSuggestions();
+                return;
+            }
+
+            const results = this.findMessstelle(searchTerm).slice(0, 8); // Show top 8 results
+
+            if (results.length === 0) {
+                this.hideSearchSuggestions();
+                return;
+            }
+
+            let html = '';
+            results.forEach(result => {
+                const displayText = result.zapfstelle && result.zapfstelle !== 'Not Specified'
+                    ? `${result.messstelle} (${result.kunde} - ${result.zapfstelle})`
+                    : `${result.messstelle} (${result.kunde})`;
+
+                html += `
+                    <div class="search-result-item" data-index="${result.index}" style="
+                        padding: 14px 18px;
+                        border-bottom: 1px solid rgba(52, 73, 94, 0.1);
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                    " onmouseover="this.style.backgroundColor='rgba(52, 73, 94, 0.05)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <div style="font-weight: 600; color: #2c3e50; font-size: 14px; margin-bottom: 2px;">${result.messstelle}</div>
+                        <div style="font-size: 12px; color: #7f8c8d;">${result.kunde}${result.zapfstelle !== 'Not Specified' ? ' - ' + result.zapfstelle : ''}</div>
+                    </div>
+                `;
+            });
+
+            this.resultsDropdown.innerHTML = html;
+            this.resultsDropdown.style.display = 'block';
+
+            // Add click handlers for results
+            this.resultsDropdown.querySelectorAll('.search-result-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const index = parseInt(item.dataset.index);
+                    const result = results.find(r => r.index === index);
+                    if (result) {
+                        this.navigateToMessstelle(result);
+                    }
+                });
+            });
+        }
+
+        hideSearchSuggestions() {
+            if (this.resultsDropdown) {
+                this.resultsDropdown.style.display = 'none';
+            }
+        }
+
+        showSearchResults(results) {
+            console.log('Multiple results found:', results.length);
+            this.showSearchSuggestions(this.searchInput.value);
+        }
+
+        showNoResultsMessage() {
+            console.log('No results found for search term');
+
+            this.resultsDropdown.innerHTML = `
+                <div style="padding: 24px; text-align: center; color: #7f8c8d;">
+                    <div style="font-size: 16px; margin-bottom: 6px; color: #2c3e50;">No Messstelle found</div>
+                    <div style="font-size: 12px;">Try a different search term</div>
+                </div>
+            `;
+            this.resultsDropdown.style.display = 'block';
+
+            setTimeout(() => {
+                this.hideSearchSuggestions();
+            }, 3000);
+        }
+
+        clearSearch() {
+            this.searchInput.value = '';
+            this.hideSearchSuggestions();
+            this.clearSearchMarker();
+            console.log('Search cleared');
+        }
+    }
+
+    // Initialize search when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Wait for map to be initialized
+        setTimeout(() => {
+            if (window.map && window.mapConfig && window.mapConfig.markersData) {
+                window.messstelleSearch = new MessstelleSearch();
+                console.log('Messstelle search ready with', window.mapConfig.markersData.length, 'markers');
+            }
+        }, 2000);
+    });
+
+    // UPDATED: Professional button hover effects
+    const searchStyles = document.createElement('style');
+    searchStyles.textContent = `
+        #messstelle-search-btn:hover {
+            background: linear-gradient(135deg, #2980b9 0%, #21618c 100%) !important;
+
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+        }
+
+        #clear-search-btn:hover {
+            background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7d 100%) !important;
+
+        }
+
+        .search-result-item:hover {
+            background-color: rgba(52, 73, 94, 0.08) !important;
+
+        }
+
+        .search-marker {
+            z-index: 1000;
+        }
+
+        /* UPDATED: Professional file input and dashboard link hover effects */
+        .file-input-label:hover {
+            background: rgba(44, 62, 80, 0.9) !important;
+
+            box-shadow: 0 2px 8px rgba(44, 62, 80, 0.3);
+        }
+
+        .dashboard-link:hover {
+            background: rgba(44, 62, 80, 0.9) !important;
+
+            box-shadow: 0 2px 8px rgba(44, 62, 80, 0.3);
+            text-decoration: none;
+            color: #ecf0f1 !important;
+        }
+    `;
+    document.head.appendChild(searchStyles);
+    </script>
+
+    <div id="map"></div>
+
+    <!-- Rest of your existing content... -->
+    <!-- FIXED Enhanced Filters Section -->
+    <div class="filters-container">
+        <div class="filter-header">
+            <h4 class="filter-title">🔍 Filters</h4>
+            <button onclick="clearAllFilters()" class="clear-all-btn-small" title="Clear All Filters">
+                🗑️ Clear
+            </button>
+        </div>
+
+        <!-- Customer Filter -->
+        <div class="filter-group">
+            <div class="filter-label" data-filter="customer">
+                👥 Customer <span id="customer-count">(0)</span>
+            </div>
+            <div class="filter-dropdown" id="customer-dropdown">
+                <div class="filter-search-container">
+                    <input type="text" id="customer-search" class="filter-search-input" placeholder="Search customers...">
+                    <div class="filter-action-buttons">
+                        <button onclick="selectAllFilter('customer')" class="filter-btn">Select All</button>
+                        <button onclick="clearFilter('customer')" class="filter-btn secondary">Clear All</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parameter Filter -->
+        <div class="filter-group">
+            <div class="filter-label" data-filter="parameter">
+                🧪 Parameter <span id="parameter-count">(0)</span>
+            </div>
+            <div class="filter-dropdown" id="parameter-dropdown">
+                <div class="filter-search-container">
+                    <input type="text" id="parameter-search" class="filter-search-input" placeholder="Search parameters...">
+                    <div class="filter-action-buttons">
+                        <button onclick="selectAllFilter('parameter')" class="filter-btn">Select All</button>
+                        <button onclick="clearFilter('parameter')" class="filter-btn secondary">Clear All</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Filter -->
+        <div class="filter-group">
+            <div class="filter-label" data-filter="category">
+                📁 Category <span id="category-count">(0)</span>
+            </div>
+            <div class="filter-dropdown" id="category-dropdown">
+                <div class="filter-search-container">
+                    <input type="text" id="category-search" class="filter-search-input" placeholder="Search categories...">
+                    <div class="filter-action-buttons">
+                        <button onclick="selectAllFilter('category')" class="filter-btn">Select All</button>
+                        <button onclick="clearFilter('category')" class="filter-btn secondary">Clear All</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Frequency Filter -->
+        <div class="filter-group">
+            <div class="filter-label" data-filter="frequency">
+                📅 Frequency <span id="frequency-count">(0)</span>
+            </div>
+            <div class="filter-dropdown" id="frequency-dropdown">
+                <div class="filter-search-container">
+                    <input type="text" id="frequency-search" class="filter-search-input" placeholder="Search frequencies...">
+                    <div class="filter-action-buttons">
+                        <button onclick="selectAllFilter('frequency')" class="filter-btn">Select All</button>
+                        <button onclick="clearFilter('frequency')" class="filter-btn secondary">Clear All</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PN Type Filter -->
+        <div class="filter-group">
+            <div class="filter-label" data-filter="pntype">
+                🏢 PN Type <span id="pntype-count">(0)</span>
+            </div>
+            <div class="filter-dropdown" id="pntype-dropdown">
+                <div class="filter-search-container">
+                    <input type="text" id="pntype-search" class="filter-search-input" placeholder="Search types...">
+                    <div class="filter-action-buttons">
+                        <button onclick="selectAllFilter('pntype')" class="filter-btn">Select All</button>
+                        <button onclick="clearFilter('pntype')" class="filter-btn secondary">Clear All</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Summary -->
+        <div id="filter-summary" class="filter-summary">
+            <em>No filters applied</em>
+        </div>
+    </div>
+
+    <!-- Enhanced Controls Panel (Right side) -->
+    <div class="controls">
+        <h3>🗺️ Map Controls</h3>
+
+        <div class="control-group">
+            <label>Map Style:</label>
+            <button onclick="toggleSatellite()">📡 Toggle Satellite</button>
+        </div>
+
+        <div class="control-group">
+            <label>Status Filter:</label>
+            <div class="checkbox-item">
+                <input type="checkbox" id="show-complete" checked onchange="updateMarkers()">
+                <label for="show-complete">✅ Complete</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="show-incomplete" checked onchange="updateMarkers()">
+                <label for="show-incomplete">❌ Incomplete</label>
+            </div>
+        </div>
+
+        <!-- FIXED Zero Sample Points Control -->
+        <div class="control-group">
+            <label>Zero Sample Points:</label>
+            <div class="checkbox-item">
+                <input type="checkbox" id="show-zero-samples" onchange="updateMarkersEnhanced()">
+                <label for="show-zero-samples">📍 Show 0/0 Messstelle</label>
+            </div>
+        </div>
+
+
+
+        <!-- FIXED Messstelle Labels Control -->
+        <div class="control-group">
+            <label>Messstelle Labels:</label>
+            <div class="checkbox-item">
+                <input type="checkbox" id="force-labels" onchange="toggleLabels()">
+                <label for="force-labels">🏷️ Force Show Labels</label>
+            </div>
+        </div>
+
+        <!-- Statistics Panel -->
+        <div class="control-group" id="stats-container">
+
+            <div style="font-size: 10px; color: #6c757d;">
+                
+
+            </div>
+        </div>
+    </div>
+
+    {% if not has_data %}
+    <div class="no-data-message">
+        <h3>🗺️ Probenplanung Map</h3>
+        <p>Please upload an Excel file to view your measurement points on the map.</p>
+        <p style="font-size: 11px; color: #6c757d;">
+            Required columns: Gebiet, Bereich, Messstelle, Zapfstelle, Parameter, Proben\nGesamt, Aktuell\nGesamt
+        </p>
+        {% if last_error %}
+        <div class="error" style="margin-top: 15px; background: #f8d7da; color: #721c24; padding: 8px; border-radius: 4px;">
+            <strong>Last Error:</strong><br>
+            {{ last_error }}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="info-panel">
+        <div><strong>Zoom Level:</strong> <span id="zoom-level">9</span></div>
+        <div><strong>Messstelle Labels:</strong> <span id="label-info">Hidden (zoom to 12+)</span></div>
+        <div><strong>Data Points:</strong> <span id="visible-count">{{ data_count }}</span> / {{ data_count }}</div>
+        <div style="margin-top: 8px; font-size: 10px; color: #6c757d;">
+            Updated: {{ timestamp }}
+        </div>
+    </div>
+
+    <!-- Configuration Script - Set up global config from template data -->
+    <script>
+        // Global configuration object
+        window.mapConfig = {
+            markersData: {{ markers_data | safe }},
+            categoryColors: {{ category_colors | safe }},
+            hasData: {{ has_data | lower }},
+            dataCount: {{ data_count }},
+            dashboardUrl: "{{ dashboard_url }}"
+        };
+
+        console.log('📊 Map configuration loaded:', {
+            markers: window.mapConfig.markersData.length,
+            hasData: window.mapConfig.hasData,
+            dataCount: window.mapConfig.dataCount
+        });
+    </script>
+
+    <!-- Load JavaScript modules in proper order -->
+    <script src="/static/js/map-utils.js"></script>
+    <script src="/static/js/map-filters.js"></script>
+    <script src="/static/js/map-markers.js"></script>
+    <script src="/static/js/map-main.js"></script>
+</body>
+</html>
